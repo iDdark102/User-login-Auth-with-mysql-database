@@ -5,12 +5,16 @@ sg.theme('DarkBlack')
 class sistema:
     def __init__(self):
         self.mensagem = ''
+        self.user = ''
+        self.nome = ''
+        self.email = ''
+        self.login = ''
     def tela_inicial(self, mensagem):
         layout_tela_inicial = [
             [sg.Text('')],
-            [sg.Text('Sistema de autenticação de login com banco de dados MySQL criado por Gabriel Macêdo de Araújo.')],
+            [sg.Text('Sistema de autenticação de login com banco de dados MySQL.')],
             [sg.Text('')],
-            [sg.Text('',size=25),sg.Button('Logar'), sg.Text('', size=5), sg.Button('Registrar')],
+            [sg.Text('',size=12),sg.Button('Logar'), sg.Text('', size=5), sg.Button('Registrar')],
             [sg.Text(mensagem,text_color='Red')]
         ]
 
@@ -30,7 +34,11 @@ class sistema:
         janela = sg.Window('Autenticação de login', resizable=True).layout(layout_login)
         Botao, valores = janela.Read()
         if Botao == 'Entrar':
-            if conectar.logar(valores['login'], valores['senha']):
+            lista = conectar.logar(valores['login'], valores['senha'])
+            if lista:
+                self.login = valores['login']
+                self.nome = lista[3]
+                self.email = lista[4]
                 self.mensagem = ''
                 janela.close()
                 return True
@@ -49,35 +57,61 @@ class sistema:
             [sg.Text('Login:'), sg.Input(key='login')],
             [sg.Text('Senha:', size=25), sg.Input(key='senha')],
             [sg.Text('Digite a senha novamente:', size=25), sg.Input(key='senha_confirm')],
-            [sg.Button('Cadastrar')]
+            [sg.Button('Cadastrar',bind_return_key=True)]
         ]
 
         janela = sg.Window('Autenticação de login', resizable=True).layout(layout_cadastro)
         Botao, valores = janela.Read()
 
         if Botao == 'Cadastrar':
-            if valores['senha'] == valores['senha_confirm']:
-                janela.close()
-                self.mensagem = ''
-                return conectar.cadastrar(valores['login'],valores['senha'])
+            if valores['nome'] != '' and valores['email']!='' and valores['login']!='':
+                if valores['senha'] == valores['senha_confirm']:
+                    janela.close()
+                    self.mensagem = ''
+                    return conectar.cadastrar(valores['login'],valores['senha'],valores['nome'],valores['email'])
+                else:
+                    janela.close()
+                    self.mensagem = 'As senhas não coincidem!'
             else:
+                self.mensagem = 'Preencha todos os campos obrigatórios!'
                 janela.close()
-                self.mensagem = 'As senhas não coincidem!'
         else:
             janela.close()
             self.mensagem = ''
+
+    def pagina_inicial_logado(self):
+        layout = [
+            [sg.Text('{}'.format(self.login),text_color='Orange'),sg.Text('online',text_color='Green')],
+            [sg.Text('Nome:',text_color='White'),sg.Text('{}'.format(self.nome),text_color='Orange')],
+            [sg.Text('E-mail:', text_color='White'), sg.Text('{}'.format(self.email), text_color='Orange')],
+            [sg.Text('Página inicial, usuário com permissões de {}'.format('convidado'))],
+            [sg.Button('Deslogar')]
+        ]
+
+        janela = sg.Window('Página inicial').layout(layout)
+        Botao, valores = janela.Read()
+        if Botao == 'Deslogar':
+            janela.close()
+            return False
+        else:
+            return True
 sistema = sistema()
 conectar = main_class()
 while True:
+    logado = False
     mensagem = sistema.mensagem
     action = sistema.tela_inicial(mensagem)
     if action == 'Logar':
         if sistema.tela_login():
-            print('logado')
+            logado = True
     elif action == 'Registrar':
         if sistema.tela_cadastro():
             print('cadastrado')
     else:
         break
+    if logado:
+        sistema.pagina_inicial_logado()
+
+
 from Connect import fechar_conexao
 fechar_conexao(conectar.con)

@@ -23,7 +23,7 @@ class main_class:
             print(i)
         self.cursor.close()
         return lista
-    def cadastrar(self, login,senha):
+    def cadastrar(self, login,senha,nome,email):
         self.cursor = self.con.cursor()
         lista = login.split()
         while len(lista)>1:
@@ -35,9 +35,9 @@ class main_class:
                 return 'A senha não pode ter espaços e ter no máximo 30 caracteres.'
         comando = '''
         insert into usuarios
-        (id,login,senha)
-        values (DEFAULT, '{}', '{}');'''
-        self.cursor.execute(comando.format(login,senha))
+        (id,login,senha,nome,email)
+        values (DEFAULT, '{}', '{}','{}','{}');'''
+        self.cursor.execute(comando.format(login,senha,nome,email))
         self.con.commit()
         self.cursor.close()
         return 'Usuário cadastrado!'
@@ -57,7 +57,7 @@ class main_class:
         for i in consultar_usuarios:
             if login == i[1]:
                 if senha==i[2]:
-                    self.logado = True
+                    self.logado = i
                     logou = True
                     break
         if not logou:
